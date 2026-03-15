@@ -3,10 +3,6 @@
 React 18 + Vite 5 + TypeScript 5 + `react-virtuoso` 4.17 기반의 채팅 리스트 성능 비교 데모다.  
 목표는 단순히 리스트를 가상화하는 것이 아니라, 실제 서비스에 가까운 채팅 패턴을 재현한 뒤 일반 렌더링(`.map()`)과 가상화 렌더링(`react-virtuoso`)을 같은 조건에서 비교하는 것이다.
 
-## 렌더링 비교 캡처
-
-아래 표에 plain / virtualized 비교 이미지를 추가하면 된다.
-
 | 가상화 리스트 | 일반 리스트 |
 |---|---|
 | ![가상화 데모](docs/assets/readme-demo-overview-vir.png) | ![일반 데모](docs/assets/readme-demo-overview-plain.png) |
