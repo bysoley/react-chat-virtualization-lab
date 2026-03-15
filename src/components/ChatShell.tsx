@@ -1,62 +1,90 @@
-import { useMemo, useState } from 'react'
-import { generateMessages } from '../mock/generateMessages'
+import { useCallback, useEffect, useRef, useState, useTransition } from 'react'
 import { useQueryParams } from '../hooks/useQueryParams'
+import { useLiveMessages } from '../hooks/useLiveMessages'
+import { usePaginatedMessages } from '../hooks/usePaginatedMessages'
+import type { DemoMessage, PerfParams } from '../types/message'
+import { MessageSender } from './MessageSender'
 import { PlainMessageList } from './PlainMessageList'
 import { Toolbar } from './Toolbar'
 import { VirtualizedMessageList } from './VirtualizedMessageList'
 
-const FIXED_SEED = 1337
-
 export function ChatShell() {
-  const { params, setMode, setItems, setImageRatio, reset } = useQueryParams()
+  const { params, applyParams } = useQueryParams()
   const [scrollContainer, setScrollContainer] = useState<HTMLDivElement | null>(null)
+  const pendingTimeouts = useRef<number[]>([])
+  const [isPending, startTransition] = useTransition()
 
-  const messages = useMemo(
-    () =>
-      generateMessages({
-        count: params.items,
-        imageRatio: params.imageRatio,
-        seed: FIXED_SEED
-      }),
-    [params.imageRatio, params.items]
+  const handleApply = useCallback(
+    (nextParams: PerfParams) => {
+      startTransition(() => applyParams(nextParams))
+    },
+    [applyParams]
+  )
+
+  const { items, firstItemIndex, hasMore, loadMore, appendMessage } =
+    usePaginatedMessages(params)
+
+  useLiveMessages(params.liveMessages, appendMessage)
+
+  useEffect(() => {
+    if (params.mode === 'plain' && scrollContainer) {
+      scrollContainer.scrollTop = scrollContainer.scrollHeight
+    }
+  }, [params.mode, items, scrollContainer])
+
+  useEffect(() => {
+    return () => {
+      pendingTimeouts.current.forEach((timeoutId) => window.clearTimeout(timeoutId))
+    }
+  }, [])
+
+  const handleSend = useCallback(
+    (text: string) => {
+      const message: DemoMessage = {
+        id: `sender-${Date.now()}`,
+        author: 'me',
+        authorName: 'Alex',
+        kind: 'text',
+        text,
+        timestamp: Date.now(),
+        status: 'sending'
+      }
+
+      appendMessage(message)
+
+      const timeoutId = window.setTimeout(() => {
+        appendMessage({ ...message, status: 'sent' })
+        pendingTimeouts.current = pendingTimeouts.current.filter((entry) => entry !== timeoutId)
+      }, 600)
+
+      pendingTimeouts.current.push(timeoutId)
+    },
+    [appendMessage]
   )
 
   return (
     <main className="app-shell">
-      <header className="app-header">
-        <div>
-          <p className="eyebrow">React 18 + react-virtuoso 4.17</p>
-          <h1>Chat Virtualization Lab</h1>
-        </div>
-        <p className="header-copy">
-          A standalone demo for comparing plain rendering with virtualized chat
-          message lists under a deterministic dataset.
-        </p>
-      </header>
+      <div className="main-layout">
+        <aside className="controls-panel">
+          <header className="app-header">
+            <p className="eyebrow">React 18 + react-virtuoso 4.17</p>
+            <h1>채팅 가상화 테스트</h1>
+          </header>
 
-      <Toolbar
-        params={params}
-        onImageRatioChange={setImageRatio}
-        onItemsChange={setItems}
-        onModeChange={setMode}
-        onReset={reset}
-      />
+          <Toolbar
+            isPending={isPending}
+            onApply={handleApply}
+            params={params}
+          />
 
-      <section className="chat-panel">
-        <div className="chat-panel__sidebar">
-          <h2>Scenario</h2>
-          <ul>
-            <li>Seed: {FIXED_SEED}</li>
-            <li>Dataset: deterministic mock conversation</li>
-            <li>Media source: picsum.photos placeholder images</li>
-          </ul>
-          <p>
-            Use the toolbar or edit the URL query string to share a specific test
-            setup.
-          </p>
-        </div>
+        </aside>
 
-        <div className="chat-panel__content">
+        <div className="chat-panel__content" aria-busy={isPending}>
+          {isPending && (
+            <div className="chat-loading-overlay">
+              <div className="chat-spinner" />
+            </div>
+          )}
           <div
             ref={(node) => {
               setScrollContainer(node)
@@ -64,16 +92,21 @@ export function ChatShell() {
             className="chat-container"
           >
             {params.mode === 'plain' ? (
-              <PlainMessageList messages={messages} />
+              <PlainMessageList items={items} />
             ) : (
               <VirtualizedMessageList
-                messages={messages}
+                key={`${params.items}-${params.imageRatio}-${params.replyRatio}-${params.pageSize}`}
+                firstItemIndex={firstItemIndex}
+                hasMore={hasMore}
+                items={items}
+                onLoadMore={loadMore}
                 scrollParent={scrollContainer}
               />
             )}
           </div>
+          <MessageSender onSend={handleSend} />
         </div>
-      </section>
+      </div>
     </main>
   )
 }

@@ -46,12 +46,17 @@ http://localhost:5173/?mode=virtualized&items=5000&pageSize=150&imageRatio=0.2&r
 
 ## 성능 측정 (콘솔 API)
 
+앱 시작 시 브라우저 콘솔에 계측 도구가 자동으로 등록된다. 별도 스크립트 붙여넣기 없이 바로 사용 가능하다.
+
 ```js
-__chatPerf.startLongTasks()   // Long Task 관찰 시작
-__chatPerf.sample(label)      // 현재 DOM 수 / 힙 샘플
-__chatPerf.snapshot(label)    // 스냅샷 저장
-__chatPerf.exportCSV()        // CSV 내보내기
-__chatPerf.reset()            // 초기화
+__chatPerf.getSupport()          // Long Task / CLS / Memory API 지원 여부
+__chatPerf.startObservers()      // Long Task + Layout Shift(CLS) 관찰 시작
+__chatPerf.startLongTasks()      // Long Task만 관찰 시작
+__chatPerf.startLayoutShifts()   // Layout Shift(CLS)만 관찰 시작
+__chatPerf.sample(label)         // DOM / 이미지 로딩 수 / 힙 / CLS 샘플
+await __chatPerf.measureMemory(label) // UA-specific memory 또는 usedJSHeapSize 측정
+__chatPerf.exportCSV()           // CSV 내보내기
+__chatPerf.reset()               // 초기화
 
 __paginationPerf.arm(label)           // 페이지 로드 측정 준비
 __paginationPerf.capture(label)       // 결과 캡처
@@ -66,4 +71,9 @@ __paginationPerf.exportCSV()
 |---|---|---|
 | 대량 초기 렌더 | 아이템 수에 비례해 DOM·힙 증가 | DOM 수 일정하게 유지 |
 | 빠른 스크롤 | 대용량에서 Long Task 빈도 높음 | 스크롤 비용 안정적 |
-| 이미지 포함 혼합 | 전체 렌더 수에 비례해 레이아웃 비용 증가 | 화면에 보이는 행 위주 비용 |
+| 이미지 포함 혼합 | 전체 렌더 수에 비례해 메모리·레이아웃 비용 증가 | 화면에 보이는 행 위주 비용 |
+
+## CLS 대응
+
+- 이미지 메시지는 생성 시점에 `width/height`를 함께 만들고, 렌더링 시 `aspect-ratio` 박스를 먼저 배치한다.
+- 그래서 네트워크 이미지가 늦게 도착해도 버블 높이가 먼저 고정되어 이미지 로딩 자체로 인한 레이아웃 시프트를 줄인다.

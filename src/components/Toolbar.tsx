@@ -1,74 +1,172 @@
+import { useEffect, useMemo, useState } from 'react'
+import { DEFAULT_PARAMS } from '../hooks/useQueryParams'
 import type { PerfParams, RenderMode } from '../types/message'
 
 type ToolbarProps = {
   params: PerfParams
-  onModeChange: (mode: RenderMode) => void
-  onItemsChange: (items: number) => void
-  onImageRatioChange: (ratio: number) => void
-  onReset: () => void
+  isPending: boolean
+  onApply: (params: PerfParams) => void
 }
 
-export function Toolbar({
-  params,
-  onModeChange,
-  onItemsChange,
-  onImageRatioChange,
-  onReset
-}: ToolbarProps) {
+function areParamsEqual(left: PerfParams, right: PerfParams) {
   return (
-    <section className="toolbar" aria-label="Performance controls">
+    left.mode === right.mode &&
+    left.items === right.items &&
+    left.imageRatio === right.imageRatio &&
+    left.replyRatio === right.replyRatio &&
+    left.pageSize === right.pageSize &&
+    left.liveMessages === right.liveMessages
+  )
+}
+
+export function Toolbar({ params, isPending, onApply }: ToolbarProps) {
+  const [draft, setDraft] = useState<PerfParams>(params)
+
+  useEffect(() => {
+    setDraft(params)
+  }, [params])
+
+  const hasChanges = useMemo(() => !areParamsEqual(draft, params), [draft, params])
+
+  return (
+    <section className="toolbar" aria-busy={isPending} aria-label="성능 테스트 컨트롤">
       <div className="toolbar-controls">
         <label className="toolbar-field">
-          <span>Render mode</span>
+          <span>렌더 방식</span>
           <select
-            value={params.mode}
-            onChange={(event) => onModeChange(event.target.value as RenderMode)}
+            value={draft.mode}
+            onChange={(event) =>
+              setDraft((current) => ({
+                ...current,
+                mode: event.target.value as RenderMode
+              }))
+            }
           >
-            <option value="virtualized">Virtualized</option>
-            <option value="plain">Plain</option>
+            <option value="virtualized">가상화</option>
+            <option value="plain">일반</option>
           </select>
         </label>
 
         <label className="toolbar-field">
-          <span>Messages</span>
+          <span>메시지 수</span>
           <input
             max={10000}
             min={10}
             step={10}
             type="number"
-            value={params.items}
-            onChange={(event) => onItemsChange(Number(event.target.value))}
+            value={draft.items}
+            onChange={(event) =>
+              setDraft((current) => ({
+                ...current,
+                items: Number(event.target.value)
+              }))
+            }
           />
         </label>
 
         <label className="toolbar-field">
-          <span>Image ratio</span>
+          <span>이미지 비율</span>
           <input
             max={1}
             min={0}
             step={0.05}
             type="number"
-            value={params.imageRatio}
-            onChange={(event) => onImageRatioChange(Number(event.target.value))}
+            value={draft.imageRatio}
+            onChange={(event) =>
+              setDraft((current) => ({
+                ...current,
+                imageRatio: Number(event.target.value)
+              }))
+            }
+          />
+        </label>
+
+        <label className="toolbar-field">
+          <span>답장 비율</span>
+          <input
+            max={0.5}
+            min={0}
+            step={0.05}
+            type="number"
+            value={draft.replyRatio}
+            onChange={(event) =>
+              setDraft((current) => ({
+                ...current,
+                replyRatio: Number(event.target.value)
+              }))
+            }
+          />
+        </label>
+
+        <label className="toolbar-field">
+          <span>페이지 크기</span>
+          <select
+            value={draft.pageSize}
+            onChange={(event) =>
+              setDraft((current) => ({
+                ...current,
+                pageSize: Number(event.target.value)
+              }))
+            }
+          >
+            <option value={50}>50</option>
+            <option value={100}>100</option>
+            <option value={150}>150</option>
+            <option value={300}>300</option>
+          </select>
+        </label>
+
+        <label className="toolbar-field toolbar-field--checkbox">
+          <span>실시간 메시지</span>
+          <input
+            checked={draft.liveMessages}
+            type="checkbox"
+            onChange={(event) =>
+              setDraft((current) => ({
+                ...current,
+                liveMessages: event.target.checked
+              }))
+            }
           />
         </label>
       </div>
 
       <div className="toolbar-summary">
         <p>
-          Mode: <strong>{params.mode}</strong>
+          렌더: <strong>{params.mode === 'virtualized' ? '가상화' : '일반'}</strong>
         </p>
         <p>
-          Messages: <strong>{params.items.toLocaleString()}</strong>
+          메시지: <strong>{params.items.toLocaleString('ko-KR')}개</strong>
         </p>
         <p>
-          Image ratio: <strong>{Math.round(params.imageRatio * 100)}%</strong>
+          이미지: <strong>{Math.round(params.imageRatio * 100)}%</strong>
         </p>
+        <p>
+          답장: <strong>{Math.round(params.replyRatio * 100)}%</strong>
+        </p>
+        <p>
+          페이지: <strong>{params.pageSize}</strong>
+        </p>
+        {hasChanges ? <p className="toolbar-pending">미적용 변경 있음</p> : null}
       </div>
 
-      <button className="toolbar-reset" type="button" onClick={onReset}>
-        Reset defaults
-      </button>
+      <div className="toolbar-actions">
+        <button
+          className="toolbar-reset"
+          type="button"
+          onClick={() => setDraft(DEFAULT_PARAMS)}
+        >
+          기본값
+        </button>
+        <button
+          className="toolbar-apply"
+          disabled={!hasChanges || isPending}
+          type="button"
+          onClick={() => onApply(draft)}
+        >
+          적용
+        </button>
+      </div>
     </section>
   )
 }
