@@ -74,7 +74,7 @@ http://localhost:5173/?mode=virtualized&items=10000&pageSize=150&imageRatio=0.35
 
 | 파라미터 | 설명 | 기본값 |
 |---|---|---|
-| `mode` | `virtualized` \| `plain` | `virtualized` |
+| `mode` | `virtualized` \| `plain` \| `plain-full` | `virtualized` |
 | `items` | 메시지 수 (`10` ~ `10000`) | `500` |
 | `imageRatio` | 이미지 메시지 비율 (`0` ~ `1`) | `0.3` |
 | `replyRatio` | 답장 메시지 비율 (`0` ~ `0.5`) | `0.1` |
@@ -152,7 +152,7 @@ __paginationPerf.exportCSV()
 
 ### 초기 렌더 비교
 
-1. 같은 URL 파라미터에서 `mode=plain`으로 연다.
+1. 같은 URL 파라미터에서 `mode=plain-full` 또는 `mode=plain`으로 연다.
 2. DevTools 콘솔에서 `__chatPerf.reset()` 실행.
 3. `__chatPerf.startObservers()` 실행.
 4. 페이지를 새로고침한다.

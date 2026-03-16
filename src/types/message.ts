@@ -2,7 +2,7 @@ export type DemoAuthor = 'me' | 'other'
 
 export type DemoMessageKind = 'text' | 'image' | 'reply'
 
-export type RenderMode = 'plain' | 'virtualized'
+export type RenderMode = 'plain' | 'plain-full' | 'virtualized'
 
 export interface DemoReplyPreview {
   authorName: string

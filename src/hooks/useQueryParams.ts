@@ -11,7 +11,11 @@ export const DEFAULT_PARAMS: PerfParams = {
 }
 
 function parseMode(value: string | null): RenderMode {
-  return value === 'plain' ? 'plain' : 'virtualized'
+  if (value === 'plain' || value === 'plain-full') {
+    return value
+  }
+
+  return 'virtualized'
 }
 
 function parseItems(value: string | null) {

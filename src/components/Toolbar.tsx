@@ -19,6 +19,18 @@ function areParamsEqual(left: PerfParams, right: PerfParams) {
   )
 }
 
+function getModeLabel(mode: RenderMode) {
+  if (mode === 'virtualized') {
+    return '가상화'
+  }
+
+  if (mode === 'plain-full') {
+    return '일반 전체'
+  }
+
+  return '일반 페이지'
+}
+
 export function Toolbar({ params, isPending, onApply }: ToolbarProps) {
   const [draft, setDraft] = useState<PerfParams>(params)
 
@@ -43,7 +55,8 @@ export function Toolbar({ params, isPending, onApply }: ToolbarProps) {
             }
           >
             <option value="virtualized">가상화</option>
-            <option value="plain">일반</option>
+            <option value="plain">일반 페이지</option>
+            <option value="plain-full">일반 전체</option>
           </select>
         </label>
 
@@ -133,7 +146,7 @@ export function Toolbar({ params, isPending, onApply }: ToolbarProps) {
 
       <div className="toolbar-summary">
         <p>
-          렌더: <strong>{params.mode === 'virtualized' ? '가상화' : '일반'}</strong>
+          렌더: <strong>{getModeLabel(params.mode)}</strong>
         </p>
         <p>
           메시지: <strong>{params.items.toLocaleString('ko-KR')}개</strong>

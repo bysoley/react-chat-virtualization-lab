@@ -73,6 +73,22 @@ export function usePaginatedMessages(params: PerfParams) {
     [allMessages, historicalMessages, unreadFromIndex, windowStart]
   )
 
+  const fullUnreadFromIndex = useMemo(() => {
+    if (initialUnreadIndex === undefined) {
+      return undefined
+    }
+
+    return initialWindowStart + initialUnreadIndex
+  }, [initialUnreadIndex, initialWindowStart])
+
+  const fullHistoricalItems = useMemo(
+    () =>
+      buildListItems(allMessages, {
+        unreadFromIndex: fullUnreadFromIndex
+      }),
+    [allMessages, fullUnreadFromIndex]
+  )
+
   useEffect(() => {
     if (historicalMessages.length === 0) {
       setFirstItemIndex(0)
@@ -101,6 +117,18 @@ export function usePaginatedMessages(params: PerfParams) {
 
     return [...historicalItems.items, ...liveItems.items]
   }, [allMessages, historicalItems.items, historicalMessages, liveMessages, windowStart])
+
+  const fullItems = useMemo(() => {
+    if (liveMessages.length === 0) {
+      return fullHistoricalItems.items
+    }
+
+    const liveItems = buildListItems(liveMessages, {
+      previousTimestamp: allMessages[allMessages.length - 1]?.timestamp
+    })
+
+    return [...fullHistoricalItems.items, ...liveItems.items]
+  }, [allMessages, fullHistoricalItems.items, liveMessages])
 
   const loadMore = useCallback(() => {
     if (windowStart <= 0) {
@@ -144,6 +172,7 @@ export function usePaginatedMessages(params: PerfParams) {
 
   return {
     allMessages,
+    fullItems,
     items,
     firstItemIndex,
     hasMore: windowStart > 0,
